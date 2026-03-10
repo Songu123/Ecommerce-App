@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">Marketly</string>
+    <string name="app_logo">Logo ứng dụng</string>
+    <string name="categories_title">Danh mục</string>
+    <string name="view_all">Xem tất cả</string>
+    <string name="recommended_title">Gợi ý cho bạn</string>
+    <string name="view_more">Xem thêm</string>
+    <string name="search_hint">Tìm kiếm sản phẩm…</string>
+    <string name="notifications">Thông báo</string>
+    <string name="cart">Giỏ hàng</string>
+    <string name="voice_search">Tìm kiếm bằng giọng nói</string>
+    <string name="promo_banner">Banner khuyến mãi</string>
+    <string name="limited_offer">LIMITED OFFER</string>
+    <string name="discount_50">Giảm giá đến 50%</string>
+    <string name="apply_electronics">Áp dụng cho mọi đơn hàng điện tử</string>
+    <string name="category_electronics">Điện tử</string>
+    <string name="category_fashion">Thời trang</string>
+    <string name="category_home">Nhà cửa</string>
+    <string name="category_beauty">Làm đẹp</string>
+    <string name="category_games">Trò chơi</string>
+    <string name="hot_deal">BÁN CHẠY</string>
+    <string name="home_tab">Trang chủ</string>
+    <string name="explore_tab">Khám phá</string>
+    <string name="cart_tab">Giỏ hàng</string>
+    <string name="orders_tab">Đơn hàng</string>
+    <string name="profile_tab">Cá nhân</string>
+    <string name="cart_badge_count">3</string>
+</resources>
+

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="primary">#2563EB</color>
+    <color name="background">#F9FAFB</color>
+    <color name="background_light">#F9FAFB</color>
+    <color name="text_primary">#1F2937</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="toolbar_background">#FFFFFF</color>
+    <color name="button_background">#F3F4F6</color>
+    <color name="bottom_nav_background">#FFFFFF</color>
+    <color name="search_border">#E5E7EB</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="badge_red">#EF4444</color>
+    <color name="rating_yellow">#FBBF24</color>
+    <color name="discount_red">#DC2626</color>
+    <color name="category_bg_1">#EFF6FF</color>
+    <color name="category_bg_2">#FEF3C7</color>
+    <color name="category_bg_3">#D1FAE5</color>
+    <color name="category_bg_4">#FCE7F3</color>
+    <color name="category_bg_5">#EDE9FE</color>
+    <color name="divider">#E5E7EB</color>
+    <color name="error">#EF4444</color>
+</resources>

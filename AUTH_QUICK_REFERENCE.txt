@@ -1,0 +1,215 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║              🎉 QUICK REFERENCE: Authentication Flow                       ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  📱 LUỒNG HOẠT ĐỘNG                                                       │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  KHỞI ĐỘNG APP
+       │
+       ▼
+  SplashActivity (1.5s)
+       │
+       ├─────────────┬─────────────┐
+       │             │             │
+   isLoggedIn?   isLoggedIn?      │
+       YES           NO            │
+       │             │             │
+       ▼             ▼             │
+  MainActivity   AuthActivity     │
+  (Home)         (Login)          │
+                     │             │
+                 Login/Register   │
+                     │             │
+                     └─────────────┘
+                           │
+                    Save to SharedPreferences
+                           │
+                           ▼
+                    MainActivity
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  🗂️ SHAREDPREFERENCES DATA                                               │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  File: ECommerceAuthPrefs
+
+  Keys:
+  ┌────────────────────┬──────────┬────────────────────────────┐
+  │ Key                │ Type     │ Value Example              │
+  ├────────────────────┼──────────┼────────────────────────────┤
+  │ jwt_token          │ String   │ eyJhbGciOiJIUzI1NiIs...   │
+  │ is_logged_in       │ Boolean  │ true                       │
+  │ user_id            │ Integer  │ 1                          │
+  │ username           │ String   │ john_doe                   │
+  │ email              │ String   │ john@example.com           │
+  │ full_name          │ String   │ John Doe                   │
+  │ role               │ String   │ USER                       │
+  └────────────────────┴──────────┴────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  📁 FILES CREATED/UPDATED                                                 │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  NEW FILES:
+  ✅ SplashActivity.java              - Splash screen & auth check
+  ✅ activity_splash.xml              - Splash layout
+  ✅ circular_background.xml          - Profile icon background
+  ✅ button_primary.xml               - Button drawable
+
+  UPDATED FILES:
+  ✅ TokenManager.java                - Added user info methods
+  ✅ ProfileFragment.java             - Show user info & logout
+  ✅ fragment_profile.xml             - Profile UI
+  ✅ AndroidManifest.xml              - SplashActivity as LAUNCHER
+  ✅ colors.xml                       - Added colors
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  💻 CODE EXAMPLES                                                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  ┌─ Check if logged in ────────────────────────────────────────┐
+  │ TokenManager tokenManager = new TokenManager(context);      │
+  │ if (tokenManager.isLoggedIn()) {                            │
+  │     // User is logged in                                    │
+  │ }                                                            │
+  └──────────────────────────────────────────────────────────────┘
+
+  ┌─ Get user info ──────────────────────────────────────────────┐
+  │ String username = tokenManager.getUsername();               │
+  │ String email = tokenManager.getEmail();                     │
+  │ String fullName = tokenManager.getFullName();               │
+  │ int userId = tokenManager.getUserId();                      │
+  └──────────────────────────────────────────────────────────────┘
+
+  ┌─ Logout ─────────────────────────────────────────────────────┐
+  │ tokenManager.clearToken();                                  │
+  │ // Navigate to AuthActivity                                 │
+  └──────────────────────────────────────────────────────────────┘
+
+  ┌─ Get token for API calls ────────────────────────────────────┐
+  │ String authHeader = tokenManager.getAuthorizationHeader();  │
+  │ // Returns: "Bearer eyJhbGc..."                             │
+  └──────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  🧪 TESTING                                                               │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  1. Build & Run:
+     cd D:\ECommerce
+     .\gradlew installDebug
+
+  2. First time:
+     ✓ See splash screen
+     ✓ Navigate to Login
+     ✓ Register account
+     ✓ Auto login → MainActivityNew
+
+  3. Close & reopen app:
+     ✓ See splash screen
+     ✓ AUTO LOGIN (no need to enter credentials!)
+     ✓ Go straight to MainActivityNew
+
+  4. Logout:
+     ✓ Go to Profile tab
+     ✓ Click Logout
+     ✓ Back to Login screen
+
+  5. After logout, reopen:
+     ✓ Must login again
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  🔍 DEBUG LOGS                                                            │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  Tag: SplashActivity
+  ├─ "User đã đăng nhập - Username: john_doe"
+  └─ "User chưa đăng nhập - Chuyển đến màn hình login"
+
+  Tag: AuthRepositoryImpl
+  ├─ "login() successful - Token: eyJhbGc..."
+  ├─ "User saved - ID: 1, Username: john_doe"
+  └─ "logout() - Clearing session"
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  📞 API ENDPOINTS                                                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  POST /api/auth/login
+  Body: {username, password}
+  Response: {token, id, username, email, fullName, role}
+
+  POST /api/auth/register
+  Body: {username, email, password, fullName}
+  Response: {token, id, username, email, fullName, role}
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ⚙️ ANDROID MANIFEST                                                     │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  LAUNCHER: SplashActivity (màn hình đầu tiên)
+  ├─ Check authentication
+  ├─ Navigate to AuthActivity (if not logged in)
+  └─ Navigate to MainActivityNew (if logged in)
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ✅ WHAT'S WORKING                                                        │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  ✓ Splash screen on app start
+  ✓ Auto check login status
+  ✓ Login/Register with JWT API
+  ✓ AUTO SAVE to SharedPreferences
+  ✓ Persistent login (no need to login again)
+  ✓ Profile shows user info
+  ✓ Logout clears all data
+  ✓ Navigate back to Login after logout
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  🎯 KEY POINTS                                                            │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  1. NO MANUAL SAVE NEEDED
+     AuthRepositoryImpl automatically saves to SharedPreferences
+     after successful login/register.
+
+  2. PERSISTENT LOGIN
+     User only needs to login ONCE.
+     App remembers the user on next launch.
+
+  3. COMPLETE LOGOUT
+     clearToken() removes ALL data from SharedPreferences.
+
+  4. SECURE
+     JWT token stored safely in SharedPreferences.
+     Token sent in Authorization header for API calls.
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  📖 DOCUMENTATION                                                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  📄 AUTH_FLOW_COMPLETE.md          - Detailed English docs
+  📄 LUONG_DANG_NHAP_HOAN_THANH.md  - Vietnamese summary
+  📄 JWT_AUTH_GUIDE.md              - JWT authentication guide
+  📄 REGISTER_API_GUIDE.md          - Register API guide
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    ✅ READY TO USE! TEST IT NOW! 🚀                        ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝

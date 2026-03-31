@@ -29,11 +29,15 @@ public class ProductRepositoryImpl implements ProductRepository {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
                 Log.d(TAG, "getAllProducts() response code: " + response.code());
+
                 if (response.isSuccessful() && response.body() != null) {
                     List<Product> products = response.body();
                     Log.d(TAG, "getAllProducts() success. Count: " + products.size());
                     if (!products.isEmpty()) {
-                        Log.d(TAG, "First product: " + products.get(0).toString());
+                        Product first = products.get(0);
+                        Log.d(TAG, "First product - ID: " + first.getId() +
+                                ", Name: " + first.getName() +
+                                ", Price: " + first.getPrice());
                     }
                     listener.onSuccess(products);
                 } else {
@@ -45,7 +49,7 @@ public class ProductRepositoryImpl implements ProductRepository {
 
             @Override
             public void onFailure(Call<List<Product>> call, Throwable t) {
-                String error = "Network error: " + t.getMessage();
+                String error = "Network error: " + (t != null ? t.getMessage() : "Unknown");
                 Log.e(TAG, "getAllProducts() failed: " + error, t);
                 listener.onError(error);
             }
@@ -53,7 +57,7 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public void getProductsByCategory(int categoryId, OnProductsLoadedListener listener) {
+    public void getProductsByCategory(int categoryId, ProductRepository.OnProductsLoadedListener listener) {
         apiService.getProductsByCategory(categoryId).enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
@@ -70,7 +74,6 @@ public class ProductRepositoryImpl implements ProductRepository {
             }
         });
     }
-
     @Override
     public void getProductById(int id, OnProductLoadedListener listener) {
         Log.d(TAG, "getProductById() called with id: " + id);
@@ -78,12 +81,26 @@ public class ProductRepositoryImpl implements ProductRepository {
             @Override
             public void onResponse(Call<Product> call, Response<Product> response) {
                 Log.d(TAG, "getProductById() response code: " + response.code());
+
+                // Log raw response body for debugging
+                try {
+                    String rawBody = response.raw().body() != null ? response.raw().body().string() : "null";
+                    Log.d(TAG, "Raw response body: " + rawBody);
+                } catch (Exception e) {
+                    Log.d(TAG, "Could not read raw body: " + e.getMessage());
+                }
+
                 if (response.isSuccessful() && response.body() != null) {
                     Product product = response.body();
-                    Log.d(TAG, "getProductById() success: " + product.toString());
+                    Log.d(TAG, "getProductById() success - Product ID: " + product.getId() +
+                            ", Name: " + product.getName() +
+                            ", Price: " + product.getPrice());
                     listener.onSuccess(product);
                 } else {
-                    String error = "Product not found";
+                    String error = "Product not found (HTTP " + response.code() + ")";
+                    if (response.body() == null) {
+                        error += " - Response body is null";
+                    }
                     Log.e(TAG, error);
                     listener.onError(error);
                 }
@@ -91,7 +108,7 @@ public class ProductRepositoryImpl implements ProductRepository {
 
             @Override
             public void onFailure(Call<Product> call, Throwable t) {
-                String error = "Network error: " + t.getMessage();
+                String error = "Network error: " + (t != null ? t.getMessage() : "Unknown error");
                 Log.e(TAG, "getProductById() failed: " + error, t);
                 listener.onError(error);
             }

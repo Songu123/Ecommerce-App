@@ -19,6 +19,7 @@ import com.son.e_commerce.data.UserRepositoryImpl;
 import com.son.e_commerce.model.entity.OrderItem;
 import com.son.e_commerce.model.entity.User;
 import com.son.e_commerce.model.repository.UserRepository;
+import com.son.e_commerce.utils.CurrencyFormatter;
 import com.son.e_commerce.view.adapter.CartAdapter;
 
 import java.util.List;
@@ -185,7 +186,7 @@ public class CartActivity extends AppCompatActivity {
         for (OrderItem item : cartItems) {
             total += item.getSubtotal();
         }
-        textViewTotal.setText(String.format("$%.2f", total));
+        textViewTotal.setText(CurrencyFormatter.formatVND(total));
     }
 
     private void setupBottomNavigation() {

@@ -19,11 +19,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.son.e_commerce.MainActivityNew;
 import com.son.e_commerce.R;
+import com.son.e_commerce.data.AuthRepositoryImpl;
 import com.son.e_commerce.data.CartRepositoryImpl;
 import com.son.e_commerce.data.UserRepositoryImpl;
 import com.son.e_commerce.model.entity.OrderItem;
 import com.son.e_commerce.model.entity.User;
 import com.son.e_commerce.model.repository.UserRepository;
+import com.son.e_commerce.utils.CurrencyFormatter;
 import com.son.e_commerce.view.adapter.CartAdapter;
 
 import java.util.List;
@@ -42,6 +44,7 @@ public class CartFragment extends Fragment {
 
     private CartRepositoryImpl cartRepository;
     private UserRepository userRepository;
+    private AuthRepositoryImpl authRepository;
 
     @Nullable
     @Override
@@ -92,6 +95,7 @@ public class CartFragment extends Fragment {
     private void setupRepositories() {
         cartRepository = new CartRepositoryImpl();
         userRepository = new UserRepositoryImpl(getContext());
+        authRepository = new AuthRepositoryImpl(getContext());
     }
 
     private void setupListeners() {
@@ -109,7 +113,12 @@ public class CartFragment extends Fragment {
     private void loadCart() {
         Log.d(TAG, "loadCart() called");
 
-        User currentUser = userRepository.getCurrentUser();
+        // Ưu tiên dùng AuthRepository (JWT login)
+        User currentUser = authRepository.getCurrentUser();
+        if (currentUser == null) {
+            currentUser = userRepository.getCurrentUser();
+        }
+
         if (currentUser == null) {
             Log.e(TAG, "No user logged in");
             Toast.makeText(getContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
@@ -210,6 +219,6 @@ public class CartFragment extends Fragment {
         for (OrderItem item : cartItems) {
             total += item.getSubtotal();
         }
-        textViewTotal.setText(String.format("$%.2f", total));
+        textViewTotal.setText(CurrencyFormatter.formatVND(total));
     }
 }

@@ -12,27 +12,27 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.son.e_commerce.data.AuthRepositoryImpl;
 import com.son.e_commerce.data.CartRepositoryImpl;
 import com.son.e_commerce.data.ProductRepositoryImpl;
 import com.son.e_commerce.data.UserRepositoryImpl;
 import com.son.e_commerce.model.entity.Product;
-import com.son.e_commerce.model.entity.User;
 import com.son.e_commerce.model.repository.ProductRepository;
 import com.son.e_commerce.model.repository.UserRepository;
 import com.son.e_commerce.presenter.ProductDetailPresenter;
 import com.son.e_commerce.presenter.contract.ProductDetailContract;
+import com.son.e_commerce.utils.network.ApiConfig;
 import com.squareup.picasso.Picasso;
 
 public class ProductDetailActivity extends AppCompatActivity implements ProductDetailContract.View {
 
     private static final String TAG = "ProductDetailActivity";
 
-    private ProductDetailPresenter presenter;
+    private ProductDetailContract.Presenter presenter;
     private ImageView imageViewProduct;
     private TextView textViewName;
     private TextView textViewPrice;
     private TextView textViewDescription;
-    private TextView textViewQuantityLabel;
     private TextView textViewQuantityValue;
     private TextView textViewStock;
     private Button buttonAddToCart;
@@ -50,47 +50,52 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductD
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_detail);
 
+        // Log API configuration for debugging
+        Log.d(TAG, "=== ProductDetailActivity Started ===");
+        Log.d(TAG, ApiConfig.getConnectionInfo());
+        Log.d(TAG, "===================================");
+
         initViews();
         setupPresenter();
         setupListeners();
 
-        // Get product ID from intent
         int productId = getIntent().getIntExtra(MainActivity.EXTRA_PRODUCT_ID, -1);
-
-        Log.d("PRODUCT_DEBUG", "Receive productId = " + productId);
+        Log.d(TAG, "Received productId = " + productId);
 
         if (productId <= 0) {
-
-            Toast.makeText(this, "Product ID invalid", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Sản phẩm không hợp lệ", Toast.LENGTH_SHORT).show();
             finish();
             return;
-
         }
 
         presenter.loadProduct(productId);
     }
 
     private void initViews() {
-        imageViewProduct = findViewById(R.id.imageViewProductDetail);
-        textViewName = findViewById(R.id.textViewProductName);
-        textViewPrice = findViewById(R.id.textViewProductPrice);
-        textViewDescription = findViewById(R.id.textViewProductDescription);
-        textViewQuantityLabel = findViewById(R.id.textViewQuantityLabel);
+        imageViewProduct   = findViewById(R.id.imageViewProductDetail);
+        textViewName       = findViewById(R.id.textViewProductName);
+        textViewPrice      = findViewById(R.id.textViewProductPrice);
+        textViewDescription= findViewById(R.id.textViewProductDescription);
         textViewQuantityValue = findViewById(R.id.textViewQuantity);
-        textViewStock = findViewById(R.id.textViewStock);
-        buttonAddToCart = findViewById(R.id.buttonAddToCart);
-        buttonBuyNow = findViewById(R.id.buttonBuyNow);
-        buttonMinus = findViewById(R.id.buttonMinus);
-        buttonPlus = findViewById(R.id.buttonPlus);
-        buttonBack = findViewById(R.id.buttonBack);
-        progressBar = findViewById(R.id.progressBar);
+        textViewStock      = findViewById(R.id.textViewStock);
+        buttonAddToCart    = findViewById(R.id.buttonAddToCart);
+        buttonBuyNow       = findViewById(R.id.buttonBuyNow);
+        buttonMinus        = findViewById(R.id.buttonMinus);
+        buttonPlus         = findViewById(R.id.buttonPlus);
+        buttonBack         = findViewById(R.id.buttonBack);
+        progressBar        = findViewById(R.id.progressBar);
     }
 
     private void setupPresenter() {
         ProductRepository productRepo = new ProductRepositoryImpl();
-        CartRepositoryImpl cartRepo = new CartRepositoryImpl();
-        UserRepository userRepo = new UserRepositoryImpl(this);
-        presenter = new ProductDetailPresenter(this, productRepo, cartRepo, userRepo);
+        CartRepositoryImpl cartRepo   = new CartRepositoryImpl();
+        UserRepository userRepo       = new UserRepositoryImpl(this);
+        AuthRepositoryImpl authRepo   = new AuthRepositoryImpl(this);
+
+        ProductDetailPresenter detailPresenter =
+                new ProductDetailPresenter(this, productRepo, cartRepo, userRepo);
+        detailPresenter.setAuthRepository(authRepo);
+        presenter = detailPresenter;
     }
 
     private void setupListeners() {
@@ -98,14 +103,12 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductD
 
         buttonMinus.setOnClickListener(v -> {
             if (currentQuantity > 1) {
-                currentQuantity--;
                 presenter.onQuantityDecrease();
             }
         });
 
         buttonPlus.setOnClickListener(v -> {
             if (currentProduct != null && currentQuantity < currentProduct.getQuantity()) {
-                currentQuantity++;
                 presenter.onQuantityIncrease();
             } else {
                 Toast.makeText(this, "Đã đạt số lượng tối đa", Toast.LENGTH_SHORT).show();
@@ -114,8 +117,8 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductD
 
         buttonAddToCart.setOnClickListener(v -> {
             Log.d(TAG, "Add to cart clicked. Product: " +
-                (currentProduct != null ? currentProduct.getName() : "null") +
-                ", Quantity: " + currentQuantity);
+                    (currentProduct != null ? currentProduct.getName() : "null") +
+                    ", Quantity: " + currentQuantity);
             presenter.onAddToCartClick(currentQuantity);
         });
 
@@ -125,8 +128,11 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductD
         });
     }
 
+    // ─── ProductDetailContract.View ──────────────────────────────────────────
+
     @Override
     public void showLoading() {
+        Log.d(TAG, "showLoading() called");
         progressBar.setVisibility(View.VISIBLE);
         buttonAddToCart.setEnabled(false);
         buttonBuyNow.setEnabled(false);
@@ -134,6 +140,7 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductD
 
     @Override
     public void hideLoading() {
+        Log.d(TAG, "hideLoading() called");
         progressBar.setVisibility(View.GONE);
         buttonAddToCart.setEnabled(true);
         buttonBuyNow.setEnabled(true);
@@ -141,47 +148,66 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductD
 
     @Override
     public void showProduct(Product product) {
+        Log.d(TAG, "showProduct() called with product: " + (product != null ? product.toString() : "null"));
+
+        if (product == null) {
+            Log.e(TAG, "showProduct: Product is null!");
+            showError("Sản phẩm không tồn tại");
+            return;
+        }
+
         this.currentProduct = product;
 
+        Log.d(TAG, "Setting product name: " + product.getName());
         textViewName.setText(product.getName());
-        textViewPrice.setText(product.getFormattedPrice());
+
+        String formattedPrice = product.getFormattedPrice();
+        Log.d(TAG, "Setting product price: " + formattedPrice);
+        textViewPrice.setText(formattedPrice);
+
+        Log.d(TAG, "Setting product description: " + product.getDescription());
         textViewDescription.setText(product.getDescription());
 
-        // Show stock
         if (product.isInStock()) {
-            textViewStock.setText("Còn hàng: " + product.getQuantity());
+            String stockText = "Còn hàng: " + product.getQuantity();
+            Log.d(TAG, "Product is in stock: " + stockText);
+            textViewStock.setText(stockText);
             textViewStock.setTextColor(getColor(android.R.color.holo_green_dark));
             enableAddToCart(true);
         } else {
+            Log.d(TAG, "Product is out of stock");
             textViewStock.setText("Hết hàng");
             textViewStock.setTextColor(getColor(android.R.color.holo_red_dark));
             showOutOfStock();
         }
 
-        // Load product image with Picasso
         if (product.getImage() != null && !product.getImage().isEmpty()) {
+            Log.d(TAG, "Loading product image: " + product.getImage());
             Picasso.get()
-                .load(product.getImage())
-                .placeholder(R.drawable.ic_shopping_bag)
-                .error(R.drawable.ic_shopping_bag)
-                .fit()
-                .centerInside()
-                .into(imageViewProduct);
+                    .load(product.getImage())
+                    .placeholder(R.drawable.ic_shopping_bag)
+                    .error(R.drawable.ic_shopping_bag)
+                    .fit()
+                    .centerInside()
+                    .into(imageViewProduct);
         } else {
-            // Fallback to placeholder
+            Log.d(TAG, "No image URL, using placeholder");
             imageViewProduct.setImageResource(R.drawable.ic_shopping_bag);
         }
+
+        Log.d(TAG, "showProduct() completed successfully");
     }
 
     @Override
     public void showError(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        Log.e(TAG, "showError() called: " + message);
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void showAddedToCart() {
         Log.d(TAG, "Product added to cart successfully");
-        Toast.makeText(this, "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "✅ Đã thêm vào giỏ hàng!", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -208,9 +234,7 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductD
 
     @Override
     protected void onDestroy() {
-        if (presenter != null) {
-            presenter.onDestroy();
-        }
+        if (presenter != null) presenter.onDestroy();
         super.onDestroy();
     }
 }

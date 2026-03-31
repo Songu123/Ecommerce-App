@@ -61,14 +61,12 @@ public class LoginFragment extends Fragment {
     }
 
     private void setupRepository() {
-        // 🎭 MOCK MODE - Test UI without server (no 403 error!)
-        // Pre-registered test accounts:
-        // - test@test.com / password123
-        // - admin@test.com / admin123
-        authRepository = new MockAuthRepository(requireContext());
+        // ✅ USE REAL API - AuthRepositoryImpl
+        authRepository = new AuthRepositoryImpl(requireContext());
 
-        // ⏸️ Switch back to real API when server is ready:
-        // authRepository = new AuthRepositoryImpl(requireContext());
+        // 🎭 MOCK MODE - Test UI without server (uncomment if server not ready)
+        // Pre-registered test accounts: test@test.com / password123, admin@test.com / admin123
+        // authRepository = new MockAuthRepository(requireContext());
     }
 
     private void setupListeners() {
@@ -86,6 +84,10 @@ public class LoginFragment extends Fragment {
     private void attemptLogin() {
         String email = editTextEmail.getText().toString().trim();
         String password = editTextPassword.getText().toString().trim();
+
+        Log.d("LoginFragment", "=== Attempting Login ===");
+        Log.d("LoginFragment", "Email: " + email);
+        Log.d("LoginFragment", "Password: " + (password.isEmpty() ? "[empty]" : "[" + password.length() + " chars]"));
 
         // Validation
         if (TextUtils.isEmpty(email)) {
@@ -112,6 +114,8 @@ public class LoginFragment extends Fragment {
             return;
         }
 
+        Log.d("LoginFragment", "Validation passed. Calling login API...");
+
         // Show loading
         showLoading();
 
@@ -119,19 +123,23 @@ public class LoginFragment extends Fragment {
         authRepository.login(email, password, new AuthRepository.OnAuthListener() {
             @Override
             public void onSuccess(User user, String token) {
+                Log.d("LoginFragment", "✅ Login successful!");
+                Log.d("LoginFragment", "User ID: " + user.getId() + ", Email: " + user.getEmail());
+                Log.d("LoginFragment", "Token: " + (token != null ? "[received]" : "[null]"));
+
                 hideLoading();
-                Toast.makeText(requireContext(), "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "✅ Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
                 navigateToHome();
             }
 
             @Override
             public void onError(String error) {
+                Log.e("LoginFragment", "❌ Login failed: " + error);
                 hideLoading();
 
                 // Show detailed error message
                 String errorMessage = getDetailedErrorMessage(error);
                 Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
-                Log.e("LoginFragment", "Login error: " + error);
             }
         });
     }

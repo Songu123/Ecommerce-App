@@ -1,11 +1,14 @@
 package com.son.e_commerce.model.entity;
 
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.annotations.Expose;
+import com.son.e_commerce.utils.CurrencyFormatter;
 
 import java.io.Serializable;
 
 public class Product implements Serializable {
-    @SerializedName("productId")
+    @SerializedName(value = "productId", alternate = {"id"})
+    @Expose
     private int id;
 
     @SerializedName("name")
@@ -113,7 +116,7 @@ public class Product implements Serializable {
     }
 
     public String getFormattedPrice() {
-        return String.format("$%.2f", price);
+        return CurrencyFormatter.formatVND(price);
     }
 
     @Override

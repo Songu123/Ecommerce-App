@@ -25,19 +25,30 @@ public class CartRepositoryImpl {
      * Get cart items for a user
      */
     public void getCart(int userId, OnCartLoadedListener listener) {
+        Log.d(TAG, "getCart - UserId: " + userId);
         apiService.getCart(userId).enqueue(new Callback<List<OrderItem>>() {
             @Override
             public void onResponse(Call<List<OrderItem>> call, Response<List<OrderItem>> response) {
+                Log.d(TAG, "getCart response code: " + response.code());
                 if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "getCart success. Items: " + response.body().size());
                     listener.onSuccess(response.body());
                 } else {
-                    listener.onError("Failed to load cart: " + response.code());
+                    String errorBody = "";
+                    try {
+                        if (response.errorBody() != null) errorBody = response.errorBody().string();
+                    } catch (Exception ignored) {}
+                    String errorMsg = "Lỗi tải giỏ hàng (HTTP " + response.code() + "): " + errorBody;
+                    Log.e(TAG, errorMsg);
+                    listener.onError(errorMsg);
                 }
             }
 
             @Override
             public void onFailure(Call<List<OrderItem>> call, Throwable t) {
-                listener.onError("Network error: " + t.getMessage());
+                String errorMsg = "Lỗi kết nối: " + t.getMessage();
+                Log.e(TAG, "getCart network error: " + errorMsg, t);
+                listener.onError(errorMsg);
             }
         });
     }
@@ -59,16 +70,24 @@ public class CartRepositoryImpl {
                     Log.d(TAG, "addToCart success. Item ID: " + response.body().getId());
                     listener.onSuccess(response.body());
                 } else {
-                    String errorMsg = "Failed to add to cart: " + response.code();
-                    Log.e(TAG, errorMsg);
+                    String errorBody = "";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorBody = response.errorBody().string();
+                        }
+                    } catch (Exception e) {
+                        errorBody = "Cannot read error body";
+                    }
+                    String errorMsg = "Lỗi thêm vào giỏ hàng (HTTP " + response.code() + "): " + errorBody;
+                    Log.e(TAG, "addToCart failed: " + errorMsg);
                     listener.onError(errorMsg);
                 }
             }
 
             @Override
             public void onFailure(Call<OrderItem> call, Throwable t) {
-                String errorMsg = "Network error: " + t.getMessage();
-                Log.e(TAG, "addToCart failed: " + errorMsg, t);
+                String errorMsg = "Lỗi kết nối: " + t.getMessage();
+                Log.e(TAG, "addToCart network error: " + errorMsg, t);
                 listener.onError(errorMsg);
             }
         });

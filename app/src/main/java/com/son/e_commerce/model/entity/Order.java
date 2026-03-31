@@ -1,5 +1,7 @@
 package com.son.e_commerce.model.entity;
 
+import com.son.e_commerce.utils.CurrencyFormatter;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -75,7 +77,7 @@ public class Order implements Serializable {
 
     // Helper methods
     public String getFormattedTotal() {
-        return String.format("$%.2f", totalPrice);
+        return CurrencyFormatter.formatVND(totalPrice);
     }
 
     public boolean isPending() {

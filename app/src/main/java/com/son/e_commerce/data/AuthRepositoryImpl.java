@@ -10,6 +10,9 @@ import com.son.e_commerce.data.api.AuthApiService;
 import com.son.e_commerce.data.dto.AuthLoginRequest;
 import com.son.e_commerce.data.dto.AuthRegisterRequest;
 import com.son.e_commerce.data.dto.AuthResponse;
+import com.son.e_commerce.data.dto.RefreshTokenRequest;
+import com.son.e_commerce.data.dto.LogoutRequest;
+import com.son.e_commerce.data.dto.LogoutResponse;
 import com.son.e_commerce.model.entity.User;
 import com.son.e_commerce.model.repository.AuthRepository;
 import com.son.e_commerce.utils.network.ApiClient;
@@ -46,30 +49,58 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public void login(String username, String password, OnAuthListener listener) {
-        Log.d(TAG, "login() called with username: " + username);
+        Log.d(TAG, "========== LOGIN START ==========");
+        Log.d(TAG, "Username/Email: " + username);
+        Log.d(TAG, "Password: " + (password != null ? "[" + password.length() + " chars]" : "[null]"));
 
         AuthLoginRequest request = new AuthLoginRequest(username, password);
+        Log.d(TAG, "Request created");
 
         apiService.login(request).enqueue(new Callback<AuthResponse>() {
             @Override
             public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
-                Log.d(TAG, "login() response code: " + response.code());
+                Log.d(TAG, "========== LOGIN RESPONSE ==========");
+                Log.d(TAG, "Response Code: " + response.code());
+                Log.d(TAG, "Is Successful: " + response.isSuccessful());
+                Log.d(TAG, "Body is null: " + (response.body() == null));
 
                 if (response.isSuccessful() && response.body() != null) {
                     AuthResponse authResponse = response.body();
-
-                    Log.d(TAG, "login() successful - Token: " + authResponse.getToken());
+                    Log.d(TAG, "✅ Login successful!");
+                    Log.d(TAG, "Access Token: " + (authResponse.getAccessToken() != null ? "[present]" : "[null]"));
+                    Log.d(TAG, "Refresh Token: " + (authResponse.getRefreshToken() != null ? "[present]" : "[null]"));
+                    Log.d(TAG, "User ID: " + authResponse.getId());
+                    Log.d(TAG, "Username: " + authResponse.getUsername());
+                    Log.d(TAG, "Email: " + authResponse.getEmail());
+                    Log.d(TAG, "Role: " + authResponse.getRole());
 
                     // Create User object from response
                     User user = createUserFromAuthResponse(authResponse);
+                    Log.d(TAG, "User object created");
 
-                    // Save user and token
-                    saveAuthData(user, authResponse.getToken());
+                    // Save user, access token, and refresh token
+                    String accessToken = authResponse.getAccessToken();
+                    String refreshToken = authResponse.getRefreshToken();
+                    saveAuthDataWithRefreshToken(user, accessToken, refreshToken);
+                    Log.d(TAG, "User, access token, and refresh token saved");
 
-                    listener.onSuccess(user, authResponse.getToken());
+                    Log.d(TAG, "========== LOGIN END (SUCCESS) ==========");
+                    listener.onSuccess(user, accessToken);
                 } else {
                     String error = parseErrorResponse(response);
-                    Log.e(TAG, "login() error: " + error);
+                    Log.e(TAG, "❌ Login failed!");
+                    Log.e(TAG, "Error: " + error);
+
+                    if (response.errorBody() != null) {
+                        try {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error Body: " + errorBody);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Could not read error body: " + e.getMessage());
+                        }
+                    }
+
+                    Log.d(TAG, "========== LOGIN END (ERROR) ==========");
                     listener.onError(error);
                 }
             }
@@ -77,7 +108,10 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
                 String error = getNetworkErrorMessage(t);
-                Log.e(TAG, "login() failed: " + error, t);
+                Log.e(TAG, "❌ Login API call failed!");
+                Log.e(TAG, "Error: " + error);
+                Log.e(TAG, "Exception: ", t);
+                Log.d(TAG, "========== LOGIN END (NETWORK ERROR) ==========");
                 listener.onError(error);
             }
         });
@@ -85,30 +119,61 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public void register(String username, String email, String password, String fullName, OnAuthListener listener) {
-        Log.d(TAG, "register() called with username: " + username + ", email: " + email);
+        Log.d(TAG, "========== REGISTER START ==========");
+        Log.d(TAG, "Username: " + username);
+        Log.d(TAG, "Email: " + email);
+        Log.d(TAG, "Full Name: " + fullName);
+        Log.d(TAG, "Password: " + (password != null ? "[" + password.length() + " chars]" : "[null]"));
 
         AuthRegisterRequest request = new AuthRegisterRequest(username, email, password, fullName);
+        Log.d(TAG, "Request created: " + request.toString());
 
         apiService.register(request).enqueue(new Callback<AuthResponse>() {
             @Override
             public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
-                Log.d(TAG, "register() response code: " + response.code());
+                Log.d(TAG, "========== REGISTER RESPONSE ==========");
+                Log.d(TAG, "Response Code: " + response.code());
+                Log.d(TAG, "Is Successful: " + response.isSuccessful());
+                Log.d(TAG, "Body is null: " + (response.body() == null));
 
                 if (response.isSuccessful() && response.body() != null) {
                     AuthResponse authResponse = response.body();
-
-                    Log.d(TAG, "register() successful - Token: " + authResponse.getToken());
+                    Log.d(TAG, "✅ Register successful!");
+                    Log.d(TAG, "Access Token: " + (authResponse.getAccessToken() != null ? "[present]" : "[null]"));
+                    Log.d(TAG, "Refresh Token: " + (authResponse.getRefreshToken() != null ? "[present]" : "[null]"));
+                    Log.d(TAG, "User ID: " + authResponse.getId());
+                    Log.d(TAG, "Username: " + authResponse.getUsername());
+                    Log.d(TAG, "Email: " + authResponse.getEmail());
+                    Log.d(TAG, "Full Name: " + authResponse.getFullName());
+                    Log.d(TAG, "Role: " + authResponse.getRole());
 
                     // Create User object from response
                     User user = createUserFromAuthResponse(authResponse);
+                    Log.d(TAG, "User object created");
 
-                    // Save user and token
-                    saveAuthData(user, authResponse.getToken());
+                    // Save user, access token, and refresh token
+                    String accessToken = authResponse.getAccessToken();
+                    String refreshToken = authResponse.getRefreshToken();
+                    saveAuthDataWithRefreshToken(user, accessToken, refreshToken);
+                    Log.d(TAG, "User, access token, and refresh token saved");
 
-                    listener.onSuccess(user, authResponse.getToken());
+                    Log.d(TAG, "========== REGISTER END (SUCCESS) ==========");
+                    listener.onSuccess(user, accessToken);
                 } else {
                     String error = parseErrorResponse(response);
-                    Log.e(TAG, "register() error: " + error);
+                    Log.e(TAG, "❌ Register failed!");
+                    Log.e(TAG, "Error: " + error);
+
+                    if (response.errorBody() != null) {
+                        try {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error Body: " + errorBody);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Could not read error body: " + e.getMessage());
+                        }
+                    }
+
+                    Log.d(TAG, "========== REGISTER END (ERROR) ==========");
                     listener.onError(error);
                 }
             }
@@ -116,7 +181,10 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
                 String error = getNetworkErrorMessage(t);
-                Log.e(TAG, "register() failed: " + error, t);
+                Log.e(TAG, "❌ Register API call failed!");
+                Log.e(TAG, "Error: " + error);
+                Log.e(TAG, "Exception: ", t);
+                Log.d(TAG, "========== REGISTER END (NETWORK ERROR) ==========");
                 listener.onError(error);
             }
         });
@@ -152,7 +220,46 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public void logout() {
-        Log.d(TAG, "logout() - Clearing session");
+        Log.d(TAG, "========== LOGOUT START ==========");
+
+        // Get current refresh token if available
+        String refreshToken = sharedPreferences.getString("refresh_token", null);
+        Log.d(TAG, "Refresh Token available: " + (refreshToken != null));
+
+        if (refreshToken != null) {
+            // Call logout API to revoke refresh token
+            LogoutRequest logoutRequest = new LogoutRequest(refreshToken);
+            apiService.logout(logoutRequest).enqueue(new Callback<LogoutResponse>() {
+                @Override
+                public void onResponse(@NonNull Call<LogoutResponse> call, @NonNull Response<LogoutResponse> response) {
+                    Log.d(TAG, "Logout API Response Code: " + response.code());
+                    if (response.isSuccessful()) {
+                        Log.d(TAG, "✅ Server revoked refresh token");
+                    } else {
+                        Log.w(TAG, "⚠️ Server logout failed, but clearing local data anyway");
+                    }
+                    clearLocalAuthData();
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<LogoutResponse> call, @NonNull Throwable t) {
+                    Log.w(TAG, "⚠️ Logout API call failed: " + t.getMessage());
+                    // Still clear local data even if API fails
+                    clearLocalAuthData();
+                }
+            });
+        } else {
+            // No refresh token, just clear local data
+            Log.d(TAG, "No refresh token found, clearing local data only");
+            clearLocalAuthData();
+        }
+    }
+
+    /**
+     * Clear all authentication data locally
+     */
+    private void clearLocalAuthData() {
+        Log.d(TAG, "Clearing local auth data");
 
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
@@ -160,6 +267,97 @@ public class AuthRepositoryImpl implements AuthRepository {
 
         currentUser = null;
         jwtToken = null;
+
+        Log.d(TAG, "========== LOGOUT END ==========");
+    }
+
+    /**
+     * Refresh access token using refresh token
+     */
+    public void refreshAccessToken(String refreshToken, OnAuthListener listener) {
+        Log.d(TAG, "========== REFRESH TOKEN START ==========");
+        Log.d(TAG, "Refresh Token: " + (refreshToken != null ? "[present]" : "[null]"));
+
+        if (refreshToken == null) {
+            Log.e(TAG, "Refresh token is null");
+            listener.onError("Refresh token not found");
+            return;
+        }
+
+        RefreshTokenRequest request = new RefreshTokenRequest(refreshToken);
+
+        apiService.refreshToken(request).enqueue(new Callback<AuthResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
+                Log.d(TAG, "========== REFRESH RESPONSE ==========");
+                Log.d(TAG, "Response Code: " + response.code());
+                Log.d(TAG, "Is Successful: " + response.isSuccessful());
+
+                if (response.isSuccessful() && response.body() != null) {
+                    AuthResponse authResponse = response.body();
+                    Log.d(TAG, "✅ Refresh token successful!");
+                    Log.d(TAG, "New Access Token received");
+
+                    // Save new tokens
+                    String newAccessToken = authResponse.getAccessToken();
+                    String newRefreshToken = authResponse.getRefreshToken();
+
+                    if (newAccessToken != null) {
+                        saveAccessToken(newAccessToken);
+                        if (newRefreshToken != null) {
+                            saveRefreshToken(newRefreshToken);
+                        }
+
+                        Log.d(TAG, "========== REFRESH TOKEN END (SUCCESS) ==========");
+                        listener.onSuccess(currentUser, newAccessToken);
+                    } else {
+                        Log.e(TAG, "Access token is null in response");
+                        listener.onError("Access token not received");
+                    }
+                } else {
+                    String error = parseErrorResponse(response);
+                    Log.e(TAG, "❌ Refresh token failed: " + error);
+                    Log.d(TAG, "========== REFRESH TOKEN END (ERROR) ==========");
+                    listener.onError(error);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
+                String error = getNetworkErrorMessage(t);
+                Log.e(TAG, "❌ Refresh token API call failed: " + error);
+                Log.d(TAG, "========== REFRESH TOKEN END (NETWORK ERROR) ==========");
+                listener.onError(error);
+            }
+        });
+    }
+
+    /**
+     * Get refresh token from storage
+     */
+    public String getRefreshToken() {
+        return sharedPreferences.getString("refresh_token", null);
+    }
+
+    /**
+     * Save refresh token
+     */
+    private void saveRefreshToken(String refreshToken) {
+        Log.d(TAG, "Saving refresh token");
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("refresh_token", refreshToken);
+        editor.apply();
+    }
+
+    /**
+     * Save only access token (when refreshing)
+     */
+    private void saveAccessToken(String accessToken) {
+        Log.d(TAG, "Saving new access token");
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_TOKEN, accessToken);
+        editor.apply();
+        jwtToken = accessToken;
     }
 
     @Override
@@ -191,7 +389,32 @@ public class AuthRepositoryImpl implements AuthRepository {
     }
 
     /**
-     * Save authentication data to SharedPreferences
+     * Save authentication data with refresh token to SharedPreferences
+     */
+    private void saveAuthDataWithRefreshToken(User user, String accessToken, String refreshToken) {
+        Log.d(TAG, "saveAuthDataWithRefreshToken() - Saving user, access token, and refresh token");
+
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_TOKEN, accessToken);
+        editor.putString("refresh_token", refreshToken);
+        editor.putInt(KEY_USER_ID, user.getId());
+        editor.putString(KEY_USERNAME, user.getUsername());
+        editor.putString(KEY_EMAIL, user.getEmail());
+        editor.putString(KEY_FULL_NAME, user.getFullName());
+        editor.putString(KEY_ROLE, user.getRole() != null ? user.getRole() : "USER");
+        editor.putBoolean(KEY_IS_LOGGED_IN, true);
+        editor.apply();
+
+        currentUser = user;
+        jwtToken = accessToken;
+
+        Log.d(TAG, "User saved with tokens - ID: " + user.getId() + ", Username: " + user.getUsername());
+        Log.d(TAG, "Access Token: [saved]");
+        Log.d(TAG, "Refresh Token: " + (refreshToken != null ? "[saved]" : "[null]"));
+    }
+
+    /**
+     * Save authentication data to SharedPreferences (legacy - without refresh token)
      */
     private void saveAuthData(User user, String token) {
         Log.d(TAG, "saveAuthData() - Saving user and token");

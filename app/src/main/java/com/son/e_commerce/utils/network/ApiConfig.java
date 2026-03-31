@@ -1,5 +1,7 @@
 package com.son.e_commerce.utils.network;
 
+import android.os.Build;
+
 /**
  * API Configuration
  * Dễ dàng chuyển đổi giữa Emulator và Real Device
@@ -27,6 +29,9 @@ public class ApiConfig {
     // ⚠️ THAY ĐỔI MODE Ở ĐÂY ⚠️
     // ============================================================================
 
+    // Note: We still provide a manual default, but the runtime will prefer the
+    // emulator URL when the app is actually running on an emulator. This helps
+    // avoid the common mistake of leaving REAL_DEVICE while testing on emulator.
     private static final Mode CURRENT_MODE = Mode.REAL_DEVICE;  // ← THAY ĐỔI MODE TẠI ĐÂY
 
     // ============================================================================
@@ -58,9 +63,36 @@ public class ApiConfig {
     private static final String PRODUCTION_BASE_URL = "https://your-api-domain.com/";
 
     /**
-     * Get base URL theo mode hiện tại
+     * Heuristic to detect emulator at runtime. This helps when developers forget
+     * to change CURRENT_MODE while running the app on emulator.
+     */
+    private static boolean isProbablyEmulator() {
+        // Common emulator indicators
+        String fingerprint = Build.FINGERPRINT;
+        String model = Build.MODEL;
+        String product = Build.PRODUCT;
+        String manufacturer = Build.MANUFACTURER;
+
+        if (fingerprint.startsWith("generic") || fingerprint.startsWith("unknown")) return true;
+        if (model.contains("google_sdk") || model.contains("Emulator") || model.contains("Android SDK built for x86")) return true;
+        if (product.contains("sdk") || product.contains("google_sdk") || product.contains("sdk_x86")) return true;
+        if (manufacturer.contains("Genymotion")) return true;
+        // Additional checks
+        if (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")) return true;
+        if (Build.HARDWARE.contains("ranchu") || Build.HARDWARE.contains("goldfish")) return true;
+
+        return false;
+    }
+
+    /**
+     * Get base URL theo mode hiện tại (auto-detect emulator)
      */
     public static String getBaseUrl() {
+        // If app is running on emulator, prefer emulator base URL regardless of CURRENT_MODE
+        if (isProbablyEmulator()) {
+            return EMULATOR_BASE_URL;
+        }
+
         switch (CURRENT_MODE) {
             case EMULATOR:
                 return EMULATOR_BASE_URL;
@@ -84,6 +116,10 @@ public class ApiConfig {
      * Get mode name
      */
     public static String getModeName() {
+        if (isProbablyEmulator()) {
+            return "Auto-detected Emulator (10.0.2.2)";
+        }
+
         switch (CURRENT_MODE) {
             case EMULATOR:
                 return "Emulator (10.0.2.2)";
@@ -100,14 +136,14 @@ public class ApiConfig {
      * Check if using emulator
      */
     public static boolean isEmulator() {
-        return CURRENT_MODE == Mode.EMULATOR;
+        return isProbablyEmulator() || CURRENT_MODE == Mode.EMULATOR;
     }
 
     /**
      * Check if using real device
      */
     public static boolean isRealDevice() {
-        return CURRENT_MODE == Mode.REAL_DEVICE;
+        return !isProbablyEmulator() && CURRENT_MODE == Mode.REAL_DEVICE;
     }
 
     /**

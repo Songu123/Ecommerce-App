@@ -6,6 +6,12 @@ public class AuthResponse {
     @SerializedName("token")
     private String token;
 
+    @SerializedName("accessToken")
+    private String accessToken;
+
+    @SerializedName("refreshToken")
+    private String refreshToken;
+
     @SerializedName("type")
     private String type;
 
@@ -24,6 +30,11 @@ public class AuthResponse {
     @SerializedName("role")
     private String role;
 
+    // Helper method to get access token (support both "token" and "accessToken" fields)
+    public String getAccessToken() {
+        return accessToken != null ? accessToken : token;
+    }
+
     // Getters and Setters
     public String getToken() {
         return token;
@@ -31,6 +42,22 @@ public class AuthResponse {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String setAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public String getType() {

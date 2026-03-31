@@ -1,6 +1,7 @@
 package com.son.e_commerce.model.entity;
 
 import com.google.gson.annotations.SerializedName;
+import com.son.e_commerce.utils.CurrencyFormatter;
 
 import java.io.Serializable;
 
@@ -90,10 +91,10 @@ public class OrderItem implements Serializable {
     }
 
     public String getFormattedPrice() {
-        return String.format("$%.2f", price);
+        return CurrencyFormatter.formatVND(price);
     }
 
     public String getFormattedSubtotal() {
-        return String.format("$%.2f", getSubtotal());
+        return CurrencyFormatter.formatVND(getSubtotal());
     }
 }

@@ -66,12 +66,11 @@ public class RegisterFragment extends Fragment {
     }
 
     private void setupRepository() {
-        // 🎭 MOCK MODE - Test UI without server (no 403 error!)
-        // Can register any email - will work instantly!
-        authRepository = new MockAuthRepository(requireContext());
+        // ✅ USE REAL API - AuthRepositoryImpl
+        authRepository = new AuthRepositoryImpl(requireContext());
 
-        // ⏸️ Switch back to real API when server is ready:
-        // authRepository = new AuthRepositoryImpl(requireContext());
+        // 🎭 MOCK MODE - Test UI without server (uncomment if server not ready)
+        // authRepository = new MockAuthRepository(requireContext());
     }
 
     private void setupListeners() {
@@ -85,6 +84,11 @@ public class RegisterFragment extends Fragment {
         String email = editTextEmail.getText().toString().trim();
         String password = editTextPassword.getText().toString().trim();
         String confirmPassword = editTextConfirmPassword.getText().toString().trim();
+
+        Log.d("RegisterFragment", "=== Attempting Register ===");
+        Log.d("RegisterFragment", "Full Name: " + fullName);
+        Log.d("RegisterFragment", "Email: " + email);
+        Log.d("RegisterFragment", "Password: " + (password.isEmpty() ? "[empty]" : "[" + password.length() + " chars]"));
 
         // Validation
         if (TextUtils.isEmpty(fullName)) {
@@ -140,6 +144,8 @@ public class RegisterFragment extends Fragment {
             return;
         }
 
+        Log.d("RegisterFragment", "Validation passed. Calling register API...");
+
         // Show loading
         showLoading();
 
@@ -148,19 +154,23 @@ public class RegisterFragment extends Fragment {
         authRepository.register(email, email, password, fullName, new AuthRepository.OnAuthListener() {
             @Override
             public void onSuccess(User user, String token) {
+                Log.d("RegisterFragment", "✅ Register successful!");
+                Log.d("RegisterFragment", "User ID: " + user.getId() + ", Username: " + user.getUsername());
+                Log.d("RegisterFragment", "Token: " + (token != null ? "[received]" : "[null]"));
+
                 hideLoading();
-                Toast.makeText(requireContext(), "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "✅ Đăng ký thành công!", Toast.LENGTH_SHORT).show();
                 navigateToHome();
             }
 
             @Override
             public void onError(String error) {
+                Log.e("RegisterFragment", "❌ Register failed: " + error);
                 hideLoading();
 
                 // Show detailed error message
                 String errorMessage = getDetailedErrorMessage(error);
                 Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
-                Log.e("RegisterFragment", "Register error: " + error);
             }
         });
     }
